@@ -1,4 +1,4 @@
 #pragma once
 
-extern const unsigned DroidSans_compressed_size;
-extern const unsigned DroidSans_compressed_data[134348 / 4];
+extern const unsigned int DroidSans_size;
+extern const unsigned int DroidSans_data[190044 / 4];
