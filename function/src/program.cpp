@@ -9,6 +9,8 @@
 #include <fstream>
 #include <sstream>
 
+#include "misc.h"
+
 Program::Program() {
 	window.create(sf::VideoMode(640, 480), L"function");
 	ImGui::SFML::Init(window, false);
@@ -71,11 +73,13 @@ Program::Program() {
 			window.setVerticalSyncEnabled(false);
 			window.setFramerateLimit(0);
 		}
+
+		inipp::get_value(ini.sections["Other"], "ShowInfo", show_info);
 	}
 
 	L = luaL_newstate();
 	luaL_openlibs(L);
-	fmt::print("Initialized.\n");
+	//fmt::print("Initialized.\n");
 }
 
 Program::~Program() {
@@ -100,13 +104,15 @@ Program::~Program() {
 			ini.sections["Rendering"]["FPS"] = fmt::format("{}", fps);
 		}
 
+		ini.sections["Other"]["ShowInfo"] = show_info ? "true" : "false";
+
 		std::ofstream file("function.ini");
 		file << "; Colors are ABGR\n"
-			"; FPS: 'VSync', 'Unlocked' or any value\n";
+			"; FPS: \"VSync\", \"Unlocked\" or any value\n";
 		ini.generate(file);
 	}
 
-	fmt::print("Shut down.\n");
+	//fmt::print("Shut down.\n");
 }
 
 void Program::tick() {
@@ -119,7 +125,7 @@ void Program::tick() {
 		sf::Vector2u region(std::max(sf::Vector2f(1, 1), sf::Vector2f(ImGui::GetContentRegionAvail())));
 		if (graphSurf.getSize() != region) {
 			graphSurf.create(region.x, region.y);
-			fmt::print("Surface resized to ({}; {})\n", region.x, region.y);
+			//fmt::print("Surface resized to ({}; {})\n", region.x, region.y);
 			renderGraph();
 		}
 		ImGui::ImageButton(graphSurf, 0);
@@ -127,7 +133,7 @@ void Program::tick() {
 			sf::Vector2f off = ImGui::GetIO().MouseDelta;
 			if (off != sf::Vector2f(0, 0)) {
 				view_offset -= off * view_scale;
-				fmt::print("Panned by ({}; {})\n", off.x, off.y);
+				//fmt::print("Panned by ({}; {})\n", off.x, off.y);
 				renderGraph();
 			}
 			info_dragging = true;
@@ -143,7 +149,7 @@ void Program::tick() {
 						view_scale *= 1.1f;
 					}
 				}
-				fmt::print("Zoomed by {}\n", ImGui::GetIO().MouseWheel);
+				//fmt::print("Zoomed by {}\n", ImGui::GetIO().MouseWheel);
 				renderGraph();
 			}
 			info_hovered = true;
@@ -164,8 +170,7 @@ void Program::tick() {
 	}
 	ImGui::End();
 
-	bool info = false;
-	if (info) {
+	if (show_info) {
 		if (ImGui::Begin("info")) {
 			ImGui::Text("dragging: %d", info_dragging);
 			ImGui::Text("hovered: %d", info_hovered);
@@ -194,11 +199,16 @@ void Program::tick() {
 }
 
 void Program::renderGraph() {
-	fmt::print("Rerendering...\n");
+	//fmt::print("Rerendering...\n");
 
 	errorMsg.clear();
-	if (luaL_dostring(L, luaScript.c_str()) != LUA_OK) {
-		errorMsg += fmt::format("{}\n", lua_tostring(L, -1));
+	if (luaL_loadstring(L, luaScript.c_str()) != LUA_OK) {
+		errorMsg += fmt::format(u8"Синтаксическая ошибка:\n{}\n", lua_tostring(L, -1));
+		return;
+	}
+
+	if (lua_pcall(L, 0, 0, 0) != LUA_OK) {
+		errorMsg += fmt::format(u8"Ошибка выполнения:\n{}\n", lua_tostring(L, -1));
 		return;
 	}
 
@@ -224,7 +234,7 @@ void Program::renderGraph() {
 
 		lua_pushnumber(L, fx);
 		if (lua_pcall(L, 1, 1, 0) != LUA_OK) {
-			errorMsg += fmt::format("{}\n", lua_tostring(L, -1));
+			errorMsg += fmt::format(u8"Ошибка выполнения при аргументе {}:\n{}\n", fx, lua_tostring(L, -1));
 			continue;
 		}
 
@@ -326,7 +336,7 @@ void Program::renderGraph() {
 	}
 
 	graphSurf.display();
-	fmt::print("Rerendered.\n");
+	//fmt::print("Rerendered.\n");
 }
 
 void Program::run() {
@@ -352,54 +362,4 @@ void Program::run() {
 		}
 		window.display();
 	}
-}
-
-void AlignText(sf::Text& text, HAlign halign, VAlign valign, float offset) {
-	sf::FloatRect bounds = text.getLocalBounds();
-	sf::Vector2f origin;
-	switch (halign) {
-		case HAlign::Left:
-			origin.x = -offset;
-			break;
-		case HAlign::Center:
-			origin.x = bounds.left + bounds.width / 2.0f;
-			break;
-		case HAlign::Right:
-			origin.x = 2.0f * bounds.left + bounds.width + offset;
-			break;
-	}
-	switch (valign) {
-		case VAlign::Top:
-			origin.y = -offset;
-			break;
-		case VAlign::Middle:
-			origin.y = bounds.top + bounds.height / 2.0f;
-			break;
-		case VAlign::Bottom:
-			origin.y = 2.0f * bounds.top + bounds.height + offset;
-			break;
-	}
-	origin = std::floor(origin);
-	text.setOrigin(origin);
-}
-
-void CursorWorkaround(sf::RenderWindow& window)
-{
-	static sf::Cursor cursor;
-	static bool cursorLoaded = false;
-	static bool imguiHasCursorPrev = true;
-	if (!cursorLoaded) {
-		cursor.loadFromSystem(sf::Cursor::Arrow);
-		cursorLoaded = true;
-	}
-	bool imguiHasCursor = ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard;
-	if (imguiHasCursor != imguiHasCursorPrev) {
-		if (imguiHasCursor) {
-			ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange;
-		} else {
-			ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
-			window.setMouseCursor(cursor);
-		}
-	}
-	imguiHasCursorPrev = imguiHasCursor;
 }

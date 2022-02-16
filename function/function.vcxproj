@@ -193,6 +193,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\fonts\DroidSans.h" />
+    <ClInclude Include="src\misc.h" />
     <ClInclude Include="src\program.h" />
     <ClInclude Include="src\stdafx.h" />
   </ItemGroup>
