@@ -27,8 +27,8 @@ public:
 	sf::Font font;
 	lua_State* L = nullptr;
 	bool needRecreateFont = true;
-	float fontSize = 16;
-	int labelFontSize = 12;
+	float fontSize = 20;
+	int labelFontSize = 14;
 	int precision = 10;
 
 	bool info_dragging = false;
