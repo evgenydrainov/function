@@ -52,6 +52,7 @@ Program::Program() {
 		} else {
 			inipp::get_value(ini.sections["Rendering"], "FPS", fps);
 		}
+		inipp::get_value(ini.sections["Rendering"], "Precision", precision);
 
 		if (fps == 0) {
 			window.setVerticalSyncEnabled(true);
@@ -98,6 +99,7 @@ Program::~Program() {
 		} else {
 			ini.sections["Rendering"]["FPS"] = fmt::format("{}", fps);
 		}
+		ini.sections["Rendering"]["Precision"] = fmt::format("{}", precision);
 
 		ini.sections["Other"]["ShowInfo"] = show_info ? "true" : "false";
 		ini.sections["Other"]["FontSize"] = fmt::format("{}", fontSize);
@@ -201,6 +203,12 @@ void Program::tick() {
 			renderGraph();
 		}
 		ImGui::PopItemWidth();
+
+		ImGui::PushItemWidth(100);
+		if (ImGui::DragInt(u8"Точность", &precision, 0.05f, 1, 50, NULL, ImGuiSliderFlags_AlwaysClamp)) {
+			renderGraph();
+		}
+		ImGui::PopItemWidth();
 	}
 	ImGui::End();
 
@@ -232,14 +240,14 @@ void Program::renderGraph() {
 	sf::Vector2f view_pos = view.getCenter() - view.getSize() / 2.0f;
 
 	sf::VertexArray vertices(sf::Points);
-	for (unsigned i = 0; i < graphSurf.getSize().x; i++) {
+	for (unsigned i = 0; i < graphSurf.getSize().x * precision; i++) {
 		lua_getglobal(L, "f");
 		if (!lua_isfunction(L, -1)) {
 			errorMsg += fmt::format(u8"Значение переменной \"f\" не является функцией ({}).\n", luaL_typename(L, -1));
 			break;
 		}
 
-		double fx = view_pos.x + double(i) / double(graphSurf.getSize().x) * view.getSize().x;
+		double fx = view_pos.x + double(i) / double(precision) / double(graphSurf.getSize().x) * view.getSize().x;
 
 		lua_pushnumber(L, fx);
 		if (lua_pcall(L, 1, 1, 0) != LUA_OK) {

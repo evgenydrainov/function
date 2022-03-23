@@ -29,6 +29,7 @@ public:
 	bool needRecreateFont = true;
 	float fontSize = 16;
 	int labelFontSize = 12;
+	int precision = 10;
 
 	bool info_dragging = false;
 	bool info_hovered = false;
