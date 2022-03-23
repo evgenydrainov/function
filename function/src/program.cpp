@@ -193,13 +193,13 @@ void Program::tick() {
 		}
 
 		ImGui::PushItemWidth(100);
-		if (ImGui::DragFloat(u8"Размер текста", &fontSize, 0.1f, 1.0f, 100.0f, "%.1f", ImGuiSliderFlags_AlwaysClamp)) {
+		if (ImGui::DragFloat(u8"Размер шрифта текста", &fontSize, 0.1f, 1.0f, 100.0f, "%.1f", ImGuiSliderFlags_AlwaysClamp)) {
 			needRecreateFont = true;
 		}
 		ImGui::PopItemWidth();
 
 		ImGui::PushItemWidth(100);
-		if (ImGui::DragInt(u8"Размер координат", &labelFontSize, 0.1f, 1, 100, NULL, ImGuiSliderFlags_AlwaysClamp)) {
+		if (ImGui::DragInt(u8"Размер шрифта координат", &labelFontSize, 0.1f, 1, 100, NULL, ImGuiSliderFlags_AlwaysClamp)) {
 			renderGraph();
 		}
 		ImGui::PopItemWidth();
