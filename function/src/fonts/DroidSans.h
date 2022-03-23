@@ -1,4 +1,4 @@
 #pragma once
 
-extern const unsigned int DroidSans_size;
-extern const unsigned int DroidSans_data[190044 / 4];
+constexpr unsigned DroidSans_size = 190044;
+extern const unsigned DroidSans_data[190044 / 4];
