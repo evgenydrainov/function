@@ -18,17 +18,7 @@ Program::Program() {
 	ImGui::StyleColorsLight();
 	ImGui::SetColorEditOptions(ImGuiColorEditFlags_PickerHueWheel);
 
-	ImGuiIO& io = ImGui::GetIO();
-	ImFontConfig config;
-	config.FontDataOwnedByAtlas = false;
-	ImVector<ImWchar> ranges;
-	ImFontGlyphRangesBuilder builder;
-	builder.AddRanges(io.Fonts->GetGlyphRangesDefault());
-	builder.AddRanges(io.Fonts->GetGlyphRangesCyrillic());
-	builder.BuildRanges(&ranges);
-	io.Fonts->AddFontFromMemoryTTF((void*)DroidSans_data, DroidSans_size, 16, &config, ranges.Data);
 	font.loadFromMemory(DroidSans_data, DroidSans_size);
-	ImGui::SFML::UpdateFontTexture();
 
 	{
 		std::ifstream file("function.txt");
@@ -75,6 +65,8 @@ Program::Program() {
 		}
 
 		inipp::get_value(ini.sections["Other"], "ShowInfo", show_info);
+		inipp::get_value(ini.sections["Other"], "FontSize", fontSize);
+		inipp::get_value(ini.sections["Other"], "LabelFontSize", labelFontSize);
 	}
 
 	L = luaL_newstate();
@@ -84,7 +76,10 @@ Program::Program() {
 
 Program::~Program() {
 	ImGui::SFML::Shutdown();
-	lua_close(L);
+	if (L) {
+		lua_close(L);
+		L = nullptr;
+	}
 
 	{
 		std::ofstream file("function.txt");
@@ -105,6 +100,8 @@ Program::~Program() {
 		}
 
 		ini.sections["Other"]["ShowInfo"] = show_info ? "true" : "false";
+		ini.sections["Other"]["FontSize"] = fmt::format("{}", fontSize);
+		ini.sections["Other"]["LabelFontSize"] = fmt::format("{}", labelFontSize);
 
 		std::ofstream file("function.ini");
 		file << "; Colors are ABGR\n"
@@ -192,6 +189,18 @@ void Program::tick() {
 		if (rerender) {
 			renderGraph();
 		}
+
+		ImGui::PushItemWidth(100);
+		if (ImGui::DragFloat(u8"Размер текста", &fontSize, 0.1f, 1.0f, 100.0f, "%.1f", ImGuiSliderFlags_AlwaysClamp)) {
+			needRecreateFont = true;
+		}
+		ImGui::PopItemWidth();
+
+		ImGui::PushItemWidth(100);
+		if (ImGui::DragInt(u8"Размер координат", &labelFontSize, 0.1f, 1, 100, NULL, ImGuiSliderFlags_AlwaysClamp)) {
+			renderGraph();
+		}
+		ImGui::PopItemWidth();
 	}
 	ImGui::End();
 
@@ -311,7 +320,7 @@ void Program::renderGraph() {
 	for (float label_x = std::floor_to(view_pos.x, xstep); label_x <= view_pos.x + view.getSize().x + 50.0f; label_x += xstep) {
 		sf::Text text;
 		text.setFont(font);
-		text.setCharacterSize(12);
+		text.setCharacterSize(labelFontSize);
 		text.setFillColor(sf::Color::Black);
 		text.setScale(view_scale);
 		text.setString(fmt::format("{}", label_x));
@@ -326,7 +335,7 @@ void Program::renderGraph() {
 		}
 		sf::Text text;
 		text.setFont(font);
-		text.setCharacterSize(12);
+		text.setCharacterSize(labelFontSize);
 		text.setFillColor(sf::Color::Black);
 		text.setScale(view_scale);
 		text.setString(fmt::format("{}", -label_y));
@@ -349,6 +358,10 @@ void Program::run() {
 				window.close();
 			}
 		}
+		if (needRecreateFont) {
+			recreateFont();
+			needRecreateFont = false;
+		}
 		ImGui::SFML::Update(window, clock.restart());
 		tick();
 		CursorWorkaround(window);
@@ -362,4 +375,22 @@ void Program::run() {
 		}
 		window.display();
 	}
+}
+
+void Program::recreateFont() {
+	ImGuiIO& io = ImGui::GetIO();
+
+	ImFontConfig config;
+	config.FontDataOwnedByAtlas = false;
+
+	ImVector<ImWchar> ranges;
+	ImFontGlyphRangesBuilder builder;
+	builder.AddRanges(io.Fonts->GetGlyphRangesDefault());
+	builder.AddRanges(io.Fonts->GetGlyphRangesCyrillic());
+	builder.BuildRanges(&ranges);
+
+	io.Fonts->Clear();
+	io.Fonts->AddFontFromMemoryTTF((void*)DroidSans_data, DroidSans_size, fontSize, &config, ranges.Data);
+
+	ImGui::SFML::UpdateFontTexture();
 }

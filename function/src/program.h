@@ -16,6 +16,7 @@ public:
 	void tick();
 	void renderGraph();
 	void run();
+	void recreateFont();
 
 	sf::RenderWindow window;
 	sf::RenderTexture graphSurf;
@@ -24,7 +25,10 @@ public:
 	std::string luaScript;
 	std::string errorMsg;
 	sf::Font font;
-	lua_State* L;
+	lua_State* L = nullptr;
+	bool needRecreateFont = true;
+	float fontSize = 16;
+	int labelFontSize = 12;
 
 	bool info_dragging = false;
 	bool info_hovered = false;
