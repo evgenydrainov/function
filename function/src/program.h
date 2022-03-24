@@ -38,5 +38,5 @@ public:
 	ImVec4 graphCol = ImVec4(0, 0, 0, 1); // normalized
 	ImVec4 bgCol = ImVec4(1, 1, 1, 1);
 
-	int fps = 30;
+	int fps = 0;
 };
