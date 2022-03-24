@@ -334,22 +334,24 @@ void Program::renderGraph() {
 		text.setFillColor(sf::Color::Black);
 		text.setScale(view_scale);
 		text.setString(fmt::format("{}", label_x));
-		text.setPosition(label_x, 0);
+		text.setPosition(label_x, std::clamp(0.0f, view_pos.y, view_pos.y + view.getSize().y - 10 * view_scale.y - text.getGlobalBounds().height));
 		AlignText(text, HAlign::Right, VAlign::Top, 2);
 		graphSurf.draw(text);
 	}
 
 	for (float label_y = std::floor_to(view_pos.y, ystep); label_y <= view_pos.y + view.getSize().y + 50.0f; label_y += ystep) {
 		if (label_y == 0) {
-			continue;
+			if (!(view_pos.x > 0 || view_pos.x + view.getSize().x < 0)) {
+				continue;
+			}
 		}
 		sf::Text text;
 		text.setFont(font);
 		text.setCharacterSize(labelFontSize);
 		text.setFillColor(sf::Color::Black);
 		text.setScale(view_scale);
-		text.setString(fmt::format("{}", -label_y));
-		text.setPosition(0, label_y);
+		text.setString(fmt::format("{}", (label_y == 0) ? 0.0f : -label_y)); // "-0"
+		text.setPosition(std::clamp(0.0f, view_pos.x + 5 * view_scale.x + text.getGlobalBounds().width, view_pos.x + view.getSize().x), label_y);
 		AlignText(text, HAlign::Right, VAlign::Top, 2);
 		graphSurf.draw(text);
 	}
