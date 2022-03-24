@@ -312,13 +312,15 @@ void Program::renderGraph() {
 
 	sf::VertexArray axes(sf::Lines);
 	for (float axis_x = std::floor_to(view_pos.x, xstep); axis_x <= view_pos.x + view.getSize().x; axis_x += xstep) {
-		axes.append(sf::Vertex(sf::Vector2f(axis_x, view_pos.y), sf::Color(128, 128, 255, 128)));
-		axes.append(sf::Vertex(sf::Vector2f(axis_x, view_pos.y + view.getSize().y), sf::Color(128, 128, 255, 128)));
+		sf::Color col = (axis_x == 0) ? sf::Color::Red : sf::Color(128, 128, 255, 255);
+		axes.append(sf::Vertex(sf::Vector2f(axis_x, view_pos.y), col));
+		axes.append(sf::Vertex(sf::Vector2f(axis_x, view_pos.y + view.getSize().y), col));
 	}
 
 	for (float axis_y = std::floor_to(view_pos.y, ystep); axis_y <= view_pos.y + view.getSize().y; axis_y += ystep) {
-		axes.append(sf::Vertex(sf::Vector2f(view_pos.x, axis_y), sf::Color(128, 128, 255, 128)));
-		axes.append(sf::Vertex(sf::Vector2f(view_pos.x + view.getSize().x, axis_y), sf::Color(128, 128, 255, 128)));
+		sf::Color col = (axis_y == 0) ? sf::Color::Red : sf::Color(128, 128, 255, 255);
+		axes.append(sf::Vertex(sf::Vector2f(view_pos.x, axis_y), col));
+		axes.append(sf::Vertex(sf::Vector2f(view_pos.x + view.getSize().x, axis_y), col));
 	}
 
 	graphSurf.draw(axes);
