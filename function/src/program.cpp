@@ -106,8 +106,8 @@ Program::~Program() {
 		ini.sections["Other"]["LabelFontSize"] = fmt::format("{}", labelFontSize);
 
 		std::ofstream file("function.ini");
-		file << "; Colors are ABGR\n"
-			"; FPS: \"VSync\", \"Unlocked\" or any value\n";
+		file << u8"; ÷вета хран€тс€ в формате ABGR\n"
+			u8"; FPS: \"VSync\", \"Unlocked\" или любое значение\n";
 		ini.generate(file);
 	}
 
