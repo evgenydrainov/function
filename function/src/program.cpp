@@ -188,9 +188,6 @@ void Program::tick() {
 		bool rerender = false;
 		rerender |= ImGui::ColorEdit4(u8"Цвет графика", &graphCol.x, ImGuiColorEditFlags_NoInputs);
 		rerender |= ImGui::ColorEdit4(u8"Цвет заднего фона", &bgCol.x, ImGuiColorEditFlags_NoInputs);
-		if (rerender) {
-			renderGraph();
-		}
 
 		ImGui::PushItemWidth(100);
 		if (ImGui::DragFloat(u8"Размер шрифта текста", &fontSize, 0.1f, 1.0f, 100.0f, "%.1f", ImGuiSliderFlags_AlwaysClamp)) {
@@ -209,6 +206,17 @@ void Program::tick() {
 			renderGraph();
 		}
 		ImGui::PopItemWidth();
+
+		ImGui::PushItemWidth(160);
+		rerender |= ImGui::DragFloat2(u8"Смещение", &view_offset.x, 0.1f);
+		ImGui::PopItemWidth();
+		ImGui::PushItemWidth(160);
+		rerender |= ImGui::DragFloat2(u8"Приближение", &view_scale.x, 0.1f, 0.0001f, 1000.0f, "%.5f", ImGuiSliderFlags_Logarithmic | ImGuiSliderFlags_NoRoundToFormat);
+		ImGui::PopItemWidth();
+
+		if (rerender) {
+			renderGraph();
+		}
 	}
 	ImGui::End();
 
@@ -229,9 +237,6 @@ void Program::renderGraph() {
 		return;
 	}
 
-	// look into how to properly manage lua stack
-	lua_settop(L, 0);
-
 	sf::View view;
 	view.setSize(sf::Vector2f(graphSurf.getSize()) * view_scale);
 	view.setCenter(view_offset);
@@ -241,6 +246,8 @@ void Program::renderGraph() {
 
 	sf::VertexArray vertices(sf::Points);
 	for (unsigned i = 0; i < graphSurf.getSize().x * precision; i++) {
+		lua_settop(L, 0);
+
 		lua_getglobal(L, "f");
 		if (!lua_isfunction(L, -1)) {
 			errorMsg += fmt::format(u8"Значение переменной \"f\" не является функцией ({}).\n", luaL_typename(L, -1));
@@ -371,7 +378,17 @@ void Program::run() {
 			}
 		}
 		if (needRecreateFont) {
-			recreateFont();
+			ImGuiIO& io = ImGui::GetIO();
+			ImFontConfig config;
+			config.FontDataOwnedByAtlas = false;
+			ImVector<ImWchar> ranges;
+			ImFontGlyphRangesBuilder builder;
+			builder.AddRanges(io.Fonts->GetGlyphRangesDefault());
+			builder.AddRanges(io.Fonts->GetGlyphRangesCyrillic());
+			builder.BuildRanges(&ranges);
+			io.Fonts->Clear();
+			io.Fonts->AddFontFromMemoryTTF((void*)DroidSans_data, DroidSans_size, fontSize, &config, ranges.Data);
+			ImGui::SFML::UpdateFontTexture();
 			needRecreateFont = false;
 		}
 		ImGui::SFML::Update(window, clock.restart());
@@ -379,30 +396,6 @@ void Program::run() {
 		CursorWorkaround(window);
 		window.clear();
 		ImGui::SFML::Render(window);
-		if (!window.hasFocus()) {
-			sf::RectangleShape r;
-			r.setFillColor(sf::Color(0, 0, 0, 128));
-			r.setSize(sf::Vector2f(window.getSize()));
-			window.draw(r);
-		}
 		window.display();
 	}
-}
-
-void Program::recreateFont() {
-	ImGuiIO& io = ImGui::GetIO();
-
-	ImFontConfig config;
-	config.FontDataOwnedByAtlas = false;
-
-	ImVector<ImWchar> ranges;
-	ImFontGlyphRangesBuilder builder;
-	builder.AddRanges(io.Fonts->GetGlyphRangesDefault());
-	builder.AddRanges(io.Fonts->GetGlyphRangesCyrillic());
-	builder.BuildRanges(&ranges);
-
-	io.Fonts->Clear();
-	io.Fonts->AddFontFromMemoryTTF((void*)DroidSans_data, DroidSans_size, fontSize, &config, ranges.Data);
-
-	ImGui::SFML::UpdateFontTexture();
 }

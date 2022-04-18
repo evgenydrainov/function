@@ -16,7 +16,6 @@ public:
 	void tick();
 	void renderGraph();
 	void run();
-	void recreateFont();
 
 	sf::RenderWindow window;
 	sf::RenderTexture graphSurf;
